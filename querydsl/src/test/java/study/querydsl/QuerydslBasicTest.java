@@ -6,6 +6,7 @@ import static study.querydsl.entity.QTeam.*;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import javax.persistence.EntityManager;
@@ -296,4 +297,54 @@ public class QuerydslBasicTest {
     boolean loaded2 = emf.getPersistenceUnitUtil().isLoaded(findMember2.getTeam());
     assertThat(loaded2).as("fetch join 적용").isTrue();
   }
+
+
+  /**
+   * 나이가 가장 많은 회원 조회
+   */
+  @Test
+  public void subQuery() {
+    QMember memberSub = new QMember("memberSub");
+
+    List<Member> result = queryFactory
+      .selectFrom(member)
+      .where(member.age.eq(
+        JPAExpressions
+          .select(memberSub.age.max())
+          .from(memberSub)
+      ))
+      .fetch();
+
+    assertThat(result).extracting("age")
+      .containsExactly(40);
+  }
+
+  /**
+   * 나이가 평균 이상인 회원
+   */
+  @Test
+  public void subQueryGoe() {
+    QMember memberSub = new QMember("memberSub");
+
+    List<Member> result = queryFactory
+      .selectFrom(member)
+      .where(member.age.goe(
+        JPAExpressions
+          .select(memberSub.age.avg())
+          .from(memberSub)
+      ))
+      .fetch();
+
+    assertThat(result).extracting("age")
+      .containsExactly(40);
+  }
 }
+
+
+
+
+
+
+
+
+
