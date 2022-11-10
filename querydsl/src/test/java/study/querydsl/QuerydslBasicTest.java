@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Commit;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.dto.MemberDto;
 import study.querydsl.dto.QMemberDto;
@@ -636,6 +637,71 @@ public class QuerydslBasicTest {
   private BooleanExpression allEq(String usernameCond, Integer ageCond) {
     return usernameEq(usernameCond).and(ageEq(ageCond));
   }
+
+  @Test
+  public void bulkUpdate() {
+    long count = queryFactory   //영향을 받은 데이터 숫자 반환
+      .update(member)
+      .set(member.username, "비회원")
+      .where(member.age.lt(28))
+      .execute();
+
+    em.flush();     //해주지 않으면 em 에 남아있는 영속성 컨텍스트가 아래에서 불러와진다.
+    em.clear();
+
+    List<Member> result = queryFactory
+      .selectFrom(member)
+      .fetch();
+
+    for (Member member1 : result) {
+      System.out.println("member1 = " + member1);
+    }
+  }
+
+  @Test
+  public void bulkAdd() {
+    queryFactory
+      .update(member)
+      .set(member.age, member.age.add(1))
+      .execute();
+  }
+
+  @Test
+  public void bulkDelete() {
+    long count = queryFactory
+      .delete(member)
+      .where(member.age.gt(18))
+      .execute();
+  }
+
+  @Test
+  public void sqlFunction() {
+    List<String> result = queryFactory
+      .select(Expressions.stringTemplate("function('regexp_replace', {0}, {1}, {2})",
+          member.username, "member", "M"))
+      .from(member)
+      .fetch();
+
+    for (String s : result) {
+      System.out.println("s = " + s);
+    }
+  }
+//
+//  @Test
+//  public void sqlFunction2() {
+//    List<String> result = queryFactory
+//      .select(member.username)
+//      .from(member)
+//      .where(member.username.eq(
+//        Expressions.stringTemplate("function('lower', {0})", member.username)))
+//      .fetch();
+//
+//    for (String s : result) {
+//      System.out.println("s = " + s);
+//    }
+//  }
+
+
 }
 
 
